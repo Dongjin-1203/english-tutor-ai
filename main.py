@@ -28,7 +28,7 @@ def main():
             with st.spinner("교정 중... 잠시만 기다려주세요."):
                 # 프롬프트 실행
                 corrected_text = run_chain(
-                    grammar_correction_prompt,
+                    GRAMMAR_SYSTEM_PROMPT,
                     user_text
                 )
             st.success("교정 완료!")
