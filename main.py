@@ -152,45 +152,59 @@ def main():
         with tab4:
             st.write("💬 영어 학습에 대해 자유롭게 질문하세요!")
             st.caption("이전 대화 내용을 기억합니다.")
-
+            
             # 대화 초기화 버튼
             if st.button("대화 기록 지우기", key="clear_tutor"):
-                st.session_state.tutor_memory.clear()
-                st.success("대화 기록이 초기화되었습니다.")
+                from utils.memory_handler import clear_memory
+                st.session_state.tutor_memory = clear_memory(st.session_state.tutor_memory)
+                st.success("대화 기록이 초기화되었습니다!")
                 st.rerun()
-
+            
             # 대화 기록 표시
             history = get_chat_history(st.session_state.tutor_memory)
-
+            
             for message in history:
-                role = message["role"]
-                content = message["content"]
-
-                if role == "user":
-                    with st.chat_message("user", avatar="🧑"):
-                        st.write(content)
-                else:
-                    with st.chat_message("assistant", avatar="🤖"):
-                        st.markdown(content)
-
+                # ✅ LangChain Message 객체 처리
+                if hasattr(message, 'type'):  # LangChain Message인 경우
+                    role = "user" if message.type == "human" else "assistant"
+                    content = message.content
+                else:  # 딕셔너리인 경우
+                    role = message["role"]
+                    content = message["content"]
+                
+                with st.chat_message(role):
+                    st.write(content)
+            
             # 사용자 입력
             user_question = st.chat_input("질문을 입력하세요...")
-
+            
             if user_question:
                 # 사용자 메시지 표시
-                with st.chat_message("user", avatar="🧑"):
+                with st.chat_message("user"):
                     st.write(user_question)
-
-                # AI 메시지 표시
-                with st.chat_message("assistant", avatar="🤖"):
-                    with st.spinner("답변 생성 중..."):
+                
+                # AI 응답 생성
+                with st.chat_message("assistant"):
+                    with st.spinner("생각 중..."):
+                        from prompts.tutor import TUTOR_SYSTEM_PROMPT
+                        from utils.llm_handler import run_chain_with_memory
+                        from utils.memory_handler import add_to_memory
+                        
                         response = run_chain_with_memory(
                             TUTOR_SYSTEM_PROMPT,
                             user_question,
                             st.session_state.tutor_memory
                         )
-                    st.markdown(response)
-
+                        
+                        st.write(response)
+                        
+                        # 메모리에 저장
+                        st.session_state.tutor_memory = add_to_memory(
+                            st.session_state.tutor_memory,
+                            user_question,
+                            response
+                        )
+                
                 st.rerun()
             
 if __name__ == "__main__":
