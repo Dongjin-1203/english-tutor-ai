@@ -17,7 +17,7 @@ def run_chain(system_promt, user_input):
     # 1. 프롬프트 템플릿 생성
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_promt),
-        ("user", "{user_input}")
+        ("user", "{text}")
     ])
 
     # 2. 체인 구성(핵심)
