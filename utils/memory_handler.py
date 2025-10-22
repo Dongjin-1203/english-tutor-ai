@@ -1,6 +1,6 @@
 # 대화 기록 저장
-from langchain.memory import ConversationBufferMemory
-
+# from langchain.memory import ConversationBufferMemory
+from langchain_core.memory import ConversationBufferMemory
 # 새 메모리 생성
 def create_memory():
     memory = ConversationBufferMemory(
