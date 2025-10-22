@@ -1,8 +1,10 @@
 # Streamlit App
 import streamlit as st
-from utils.llm_handler import run_chain
+from utils.llm_handler import run_chain, run_chain_with_memory
+from utils.memory_handler import create_memory, get_chat_history
 from prompts.grammar import GRAMMAR_SYSTEM_PROMPT
 from prompts.translate import TRANSLATION_SYSTEM_PROMPT
+from prompts.tutor import TUTOR_SYSTEM_PROMPT
 from prompts.conversation import get_conversation_prompt
 import dotenv
 
@@ -25,11 +27,20 @@ def main():
     if "current_level" not in st.session_state:
         st.session_state.current_level = "intermediate"
 
+    # session_state 초기화에 추가
+    if "tutor_memory" not in st.session_state:
+        st.session_state.tutor_memory = create_memory()
+
     # UI 구성
     st.title("🎓 영어 문법 교정 AI")
 
     # 탭 구조로 변경
-    tab1, tab2, tab3 = st.tabs(["문법 교정", "번역", "회화 연습"])
+    tab1, tab2, tab3, tab4 = st.tabs([
+        "문법 교정", 
+        "번역", 
+        "회화 연습",
+        "학습 도우미"
+        ])
 
     # 문법 교정
     with tab1:
@@ -135,6 +146,51 @@ def main():
                 response = run_chain(prompt, user_input)
                 st.session_state.messages.append({"role": "user", "content": user_input})
                 st.session_state.messages.append({"role": "ai", "content": response})
+                st.rerun()
+
+        # 학습 도우미
+        with tab4:
+            st.write("💬 영어 학습에 대해 자유롭게 질문하세요!")
+            st.caption("이전 대화 내용을 기억합니다.")
+
+            # 대화 초기화 버튼
+            if st.button("대화 기록 지우기", key="clear_tutor"):
+                st.session_state.tutor_memory.clear()
+                st.success("대화 기록이 초기화되었습니다.")
+                st.rerun()
+
+            # 대화 기록 표시
+            history = get_chat_history(st.session_state.tutor_memory)
+
+            for message in history:
+                role = message["role"]
+                content = message["content"]
+
+                if role == "user":
+                    with st.chat_message("user", avatar="🧑"):
+                        st.write(content)
+                else:
+                    with st.chat_message("assistant", avatar="🤖"):
+                        st.markdown(content)
+
+            # 사용자 입력
+            user_question = st.chat_input("질문을 입력하세요...")
+
+            if user_question:
+                # 사용자 메시지 표시
+                with st.chat_message("user", avatar="🧑"):
+                    st.write(user_question)
+
+                # AI 메시지 표시
+                with st.chat_message("assistant", avatar="🤖"):
+                    with st.spinner("답변 생성 중..."):
+                        response = run_chain_with_memory(
+                            TUTOR_SYSTEM_PROMPT,
+                            user_question,
+                            st.session_state.tutor_memory
+                        )
+                    st.markdown(response)
+
                 st.rerun()
             
 if __name__ == "__main__":
