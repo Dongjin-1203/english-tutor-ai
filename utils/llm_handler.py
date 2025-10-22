@@ -5,10 +5,10 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 # LLM 인스턴스 생성
-def get_llm(tamperature=0.3):
+def get_llm(temperature=0.3):
     return ChatOpenAI(
         model="gpt-3.5-turbo",
-        temperature=tamperature,
+        temperature=temperature,
         openai_api_key=os.getenv("OPENAI_API_KEY")
     )
 
